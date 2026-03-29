@@ -1,138 +1,205 @@
-import { motion } from "framer-motion";
-import { FcGoogle } from "react-icons/fc";
-import {useEffect, useState} from "react";
-import {provider,auth} from "../utils/firebase.js";
-import {signInWithPopup} from 'firebase/auth'
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { userLogin, createUser } from "../services/user.service";
 
+export default function GamingAuthUI() {
+    const [isLogin, setIsLogin] = useState(true);
+    const [error, setError] = useState("");
+    const [formForCreateAccount, setFormForCreateAccount] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+    })
 
-export default function Auth() {
-    const [dark, setDark] = useState(true);
-
-    useEffect(() => {
-        window.document.title = "Ai Interview - Auth (By Tanush)";
-    },[])
-
-    const handleGoogleAuth = async () => {
-        try{
-            const response = await signInWithPopup(auth,provider);
-        }catch(err){
-            console.log(err);
-        }
+    const handleChange = (e) => {
+        setFormForCreateAccount({ ...formForCreateAccount, [e.target.name]: e.target.value });
     }
 
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
+
+    const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    const handleValidation = () => {
+        let errors = [];
+
+        const { firstName, lastName, email, password } = formForCreateAccount;
+
+        if (!email.trim()) {
+            errors.push("Email is required");
+        } else if (!emailRegex.test(email)) {
+            errors.push("Invalid Email format");
+        }
+
+        if (!password.trim()) {
+            errors.push("Password is required");
+        } else if (!passwordRegex.test(password)) {
+            errors.push(
+                "Password must be 8+ chars, include uppercase, lowercase, number & special character"
+            );
+        }
+
+        if (!isLogin) {
+            if (!firstName.trim()) errors.push("First name is required");
+            if (!lastName.trim()) errors.push("Last name is required");
+        }
+
+        return errors;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const errors = handleValidation();
+
+        if (errors.length > 0) {
+            setError(errors.join(", "));
+            return;
+        }
+
+        setError("");
+
+        try {
+            if (isLogin) {
+                const response = await userLogin({
+                    email: formForCreateAccount.email,
+                    password: formForCreateAccount.password,
+                });
+                console.log(response);
+            } else {
+                const response = await createUser(formForCreateAccount);
+                console.log(response);
+            }
+
+            // Reset form after success
+            setFormForCreateAccount({
+                firstName: "",
+                lastName: "",
+                email: "",
+                password: "",
+            });
+
+        } catch (err) {
+            setError("Something went wrong. Try again.");
+        }
+    };
+
     return (
-        <div
-            className={`min-h-screen flex items-center justify-center p-6 overflow-hidden transition-all duration-500 ${
-                dark ? "bg-black" : "bg-gray-100"
-            }`}
-        >
-            {/* Background Glow */}
-            <div
-                className={`absolute inset-0 transition-all duration-500 ${
-                    dark
-                        ? "bg-[radial-gradient(circle_at_top,_#1f2937,_#000)] opacity-80"
-                        : "bg-[radial-gradient(circle_at_top,_#e5e7eb,_#ffffff)] opacity-100"
-                }`}
-            />
+        <div className="min-h-screen bg-gradient-to-br from-lime-200 to-green-300 flex items-center justify-center p-6">
+            <div className="w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl relative">
 
-            {/* Theme Toggle */}
-            <button
-                onClick={() => setDark(!dark)}
-                className={`absolute top-6 hover:scale-[1.1] cursor-pointer transition-all duration-75 right-6 px-4 py-2 rounded-xl text-sm font-medium ${dark ? "bg-white/10 text-white backdrop-blur border border-white/20" : "bg-black/10 text-black backdrop-blur border border-black/20`"}`}
-            >
-                Toggle Theme
-            </button>
+                <div className="grid md:grid-cols-2">
 
-            <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={`relative max-w-2xl w-full backdrop-blur-2xl border rounded-3xl shadow-2xl p-10 text-center transition-all duration-500 ${
-                    dark
-                        ? "bg-white/5 border-white/10 text-white"
-                        : "bg-white border-gray-200 text-black"
-                }`}
-            >
-                {/* Heading */}
-                <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className={`text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent ${
-                        dark ? "from-white to-gray-400" : "from-black to-gray-500"
-                    }`}
-                >
-                    Crack Your Next Interview 🚀
-                </motion.h1>
-
-                {/* Description */}
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className={`text-lg mb-8 leading-relaxed max-w-xl mx-auto ${
-                        dark ? "text-gray-400" : "text-gray-600"
-                    }`}
-                >
-                    Practice real interview questions, track your growth, and get
-                    AI-powered insights to level up faster. Built to simulate real
-                    interview pressure so you walk in confident.
-                </motion.p>
-
-                {/* Features */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10"
-                >
-                    {["Real Questions", "AI Feedback", "Track Progress"].map(
-                        (item, i) => (
-                            <motion.div
-                                key={i}
-                                whileHover={{ y: -5, scale: 1.03 }}
-                                className={`p-4 rounded-xl border transition ${
-                                    dark
-                                        ? "bg-white/5 border-white/10 hover:border-white/20"
-                                        : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                    {/* FORM SECTION */}
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={isLogin ? "login-form" : "register-form"}
+                            initial={{ x: isLogin ? -200 : 200, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: isLogin ? 200 : -200, opacity: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className={`p-10 flex flex-col justify-center bg-lime-300/80 backdrop-blur-xl ${isLogin ? "md:order-1" : "md:order-2"
                                 }`}
-                            >
-                                <p className="font-medium">{item}</p>
-                            </motion.div>
-                        )
-                    )}
-                </motion.div>
+                        >
+                            {/* LOGO */}
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-lime-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                    AI
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-green-900 leading-tight">AI Interview</h2>
+                                    <p className="text-xs text-green-800">Smart Practice Platform</p>
+                                </div>
+                            </div>
 
-                {/* Google Login Button */}
-                <motion.button
-                    onClick={handleGoogleAuth}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileTap={{ scale: 0.96 }}
-                    className={`relative w-full flex hover:scale-[1.1] cursor-pointer duration-75 items-center justify-center gap-3 text-lg py-4 rounded-2xl font-semibold overflow-hidden group transition ${
-                        dark
-                            ? "bg-white text-black"
-                            : "bg-black text-white"
-                    }`}
-                >
-          <span className="relative flex items-center gap-3">
-            <FcGoogle size={24} />
-            Continue with Google
-          </span>
-                </motion.button>
+                            <h1 className="text-4xl font-bold text-green-900 mb-4">
+                                {isLogin ? "SIGN IN" : "CREATE NEW ACCOUNT"}
+                            </h1>
 
-                {/* Footer */}
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className={`text-sm mt-6 ${
-                        dark ? "text-gray-500" : "text-gray-400"
-                    }`}
-                >
-                    No spam. No clutter. Just results.
-                </motion.p>
-            </motion.div>
+                            <p className="text-sm text-green-800 mb-6">
+                                {isLogin
+                                    ? "Don't have an account?"
+                                    : "Already a member?"}
+                                <button
+                                    onClick={() => setIsLogin(!isLogin)}
+                                    className="ml-2 text-orange-600 font-semibold"
+                                >
+                                    {isLogin ? "Create Account" : "Sign In"}
+                                </button>
+                            </p>
+
+                            <form className="space-y-4">
+                                {!isLogin && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input type="text" onChange={handleChange} name="firstName" value={formForCreateAccount.firstName} placeholder="First Name" className="input" />
+                                        <input type="text" onChange={handleChange} name="lastName" value={formForCreateAccount.lastName} placeholder="Last Name" className="input" />
+                                    </div>
+                                )}
+
+                                <input onChange={handleChange} value={formForCreateAccount.email} name="email" type="email" placeholder="Email" className="input" />
+                                <input onChange={handleChange} value={formForCreateAccount.password} name="password" type="password" placeholder="Password" className="input" />
+
+                                <motion.button
+                                    onClick={handleSubmit}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="w-full py-3 rounded-xl bg-orange-500 text-white font-semibold shadow-lg"
+                                >
+                                    {isLogin ? "LOGIN" : "CREATE ACCOUNT"}
+                                </motion.button>
+                                {/* ERROR HERE */}
+                                {error && (
+                                    <p className="text-red-600 text-sm mt-2">
+                                        {error}
+                                    </p>
+                                )}
+                            </form>
+                        </motion.div>
+                    </AnimatePresence>
+
+                    {/* IMAGE SECTION */}
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={isLogin ? "login-image" : "register-image"}
+                            initial={{ x: isLogin ? 200 : -200, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: isLogin ? -200 : 200, opacity: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className={`hidden md:flex items-center justify-center bg-gradient-to-br from-green-400 to-lime-500 ${isLogin ? "md:order-2" : "md:order-1"
+                                }`}
+                        >
+                            <motion.img
+                                src={
+                                    isLogin
+                                        ? "https://i.pinimg.com/736x/0c/82/75/0c8275ba087ddfbee1c2eebb46ad5806.jpg"
+                                        : "https://i.pinimg.com/736x/5f/4a/c0/5f4ac06e15593dd3ef60d492a43e565f.jpg"
+                                }
+                                alt="character"
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.6 }}
+                                className={`${!isLogin ? "h-190 object-cover" : "h-170 object-cover"}`}
+                            />
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+            </div>
+
+            <style>{`
+        .input {
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.6);
+          outline: none;
+          border: 1px solid rgba(0,0,0,0.1);
+        }
+        .input:focus {
+          border: 1px solid #16a34a;
+          box-shadow: 0 0 0 2px rgba(34,197,94,0.3);
+        }
+      `}</style>
         </div>
     );
 }

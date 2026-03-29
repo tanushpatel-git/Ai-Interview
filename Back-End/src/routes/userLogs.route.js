@@ -1,11 +1,13 @@
 const express = require("express");
-const {googleAuth, logout} = require("../controllers/auth.controller");
+const {userCreate, userLogin, userLogout, getCurrentUser} = require("../controllers/user.controller")
 const router = express.Router();
 
 
 
-router.post("/login", googleAuth)
-router.get("logout", logout)
+router.post("/create", userCreate )
+router.post("/login", userLogin)
+router.get("/logout", userLogout)
+router.get("/current-user", getCurrentUser)
 
 
 module.exports = router;
