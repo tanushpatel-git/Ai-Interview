@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { userLogin, createUser } from "../services/user.service";
+import { useNavigate } from "react-router";
+import toast from "react-hot-toast";
 
 export default function GamingAuthUI() {
     const [isLogin, setIsLogin] = useState(true);
+    const navigate = useNavigate();
     const [error, setError] = useState("");
     const [formForCreateAccount, setFormForCreateAccount] = useState({
         firstName: "",
@@ -67,9 +70,13 @@ export default function GamingAuthUI() {
                     password: formForCreateAccount.password,
                 });
                 console.log(response);
+                toast.success("Login successful");
+                navigate("/");
             } else {
                 const response = await createUser(formForCreateAccount);
                 console.log(response);
+                toast.success("Account created successfully");
+                navigate("/");
             }
 
             // Reset form after success

@@ -3,7 +3,6 @@ const { jsonWebTokenCreate } = require("../utility/jsonWebTokenThings.js");
 
 const userCreate = async (req, res) => {
     try {
-
         // required data want to do a things
         const data = req.body;
         const userData = await userModel.create(data);
@@ -35,7 +34,12 @@ const userCreate = async (req, res) => {
 const userLogin = async (req, res) => {
     try {
         const data = req.body;
-        const userData = await userModel.findOne({ email: data.email });
+        const userData = await userModel.findOne({
+            $and: [
+                { email: data.email },
+                { password: data.password }
+            ]
+        });
 
         // this is a code when user not found 
         if (!userData) {
@@ -46,7 +50,7 @@ const userLogin = async (req, res) => {
         }
 
         // this is a code to send a cookie when user found
-        const token = jsonWebTokenCreate(userData._id);
+        const token = await jsonWebTokenCreate(userData._id);
         res.cookie("token", token, {
             httpOnly: true,
             secure: true,
@@ -92,8 +96,10 @@ const userLogout = async (req, res) => {
 const getCurrentUser = async (req, res) => {
     try {
         // this is a code to get the current user data from the database 
+        
         const userData = await userModel.findById(req.userId);
 
+        
         // this is a response when user found 
         return res.status(200).json({
             success: true,
